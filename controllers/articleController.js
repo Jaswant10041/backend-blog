@@ -39,6 +39,16 @@ const getPosts=async(req,res)=>{
     console.log(err);
     return res.status(400).json({msg:err});
   }
-  
 }
-module.exports = { addArticle,getPosts };
+const deletePost=async(req,res)=>{
+  try{
+    const {_id}=req.body.data
+    const newData=await Articles.findByIdAndDelete(_id);
+    console.log("Post deleted successfully");
+    return res.status(200).json({msg:'Post deleted successfully'});
+  }
+  catch(err){
+    return res.status(400).json({msg:err});
+  }
+}
+module.exports = { addArticle,getPosts,deletePost };

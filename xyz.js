@@ -1,11 +1,9 @@
 const http=require('http');
 
-const port=3000;
-const server=http.createServer((req,res)=>{
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end('hi jaswanth how are you');
+const server=http.createServer(function(req,res){
+    if(req.url==='/ate'){
+        res.end('yes');
+    }
+    res.end("no");
 });
-
-server.listen(port,()=>{
-    console.log(`server is running at ${port}`);
-})
+server.listen(3000);
