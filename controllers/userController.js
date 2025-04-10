@@ -63,7 +63,6 @@ const userRegister=async(req,res)=>{
     catch(err){
         res.status(409).json({'msg':"Already registered"})
     }
-    
 }   
 const getCurrentUser=async(req,res)=>{
     const email=req.email;
@@ -72,6 +71,9 @@ const getCurrentUser=async(req,res)=>{
         return res.status(404).json({message:"User Not Found"});
     }
     res.status(200).json(user.toUserResponse());
+}
+const ignore=(req,res)=>{
+    return res.status(200).json({message:"Authentication successful"});
 }
 const updateUserData=async(req,res)=>{
     const data=req.body;
@@ -95,4 +97,4 @@ const updateUserData=async(req,res)=>{
     console.log(updatedData);
     res.status(200).json({data:updatedData})
 }
-module.exports={userLogin,userRegister,getCurrentUser,updateUserData};
+module.exports={userLogin,userRegister,getCurrentUser,updateUserData,ignore};

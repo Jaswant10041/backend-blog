@@ -6,4 +6,5 @@ userRouter.post('/users/register',userController.userRegister);
 userRouter.post('/users/login',userController.userLogin);
 userRouter.get('/users/user',verifyJWT, userController.getCurrentUser);
 userRouter.put('/users/update',userController.updateUserData);
+userRouter.get('/users/isauthenticated',verifyJWT,userController.ignore);
 module.exports=userRouter;

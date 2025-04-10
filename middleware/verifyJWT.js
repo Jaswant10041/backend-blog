@@ -6,7 +6,6 @@ const verifyJWT=(req,res,next)=>{
         return res.status(401).json({message:"Unauthorized"});
     }
     const arr=authHeader.split(' ');
-    
     console.log(arr);
     const token=arr[1];
     jwt.verify(
@@ -18,12 +17,11 @@ const verifyJWT=(req,res,next)=>{
                 return res.status(401).json({message:`${err}`});
             }
             // console.log(decoded);
-            req.userId=decoded.user.id;
+            req.userId=decoded.user._id;
             req.email=decoded.user.email;
             req.password=decoded.user.password;
             next();
         }
     )
-    
 }
 module.exports=verifyJWT;
