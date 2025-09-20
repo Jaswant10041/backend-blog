@@ -1,14 +1,13 @@
 const bcrypt=require('bcrypt');
 const Users=require('../models/userModel');
+const Followers=require('../models/followerModel');
 
 const userLogin=async(req,res)=>{
     const data=req.body;
     const foundData=await Users.findOne({email:data.email});
     if(!foundData){
         res.status(404).json({
-            errors:{
-                body: "Account Not found",
-            },
+            msg: "Account Not found",
         });
         return ;
     }
@@ -45,7 +44,6 @@ const userRegister=async(req,res)=>{
         const findEmail=await Users.findOne({email:data.email});
         if(findEmail){
             console.log("Already Registered");
-            alert('Already registered');
             throw new Error("Already registered");
         }
         const hashedPassword=await bcrypt.hash(data.password,10);
@@ -58,6 +56,7 @@ const userRegister=async(req,res)=>{
         
         const insertedData=await Users.create(temp);
         const dataWithToken=insertedData.toUserResponse();
+        console.log(dataWithToken);
         res.status(200).json(dataWithToken);
     }
     catch(err){
@@ -97,4 +96,65 @@ const updateUserData=async(req,res)=>{
     console.log(updatedData);
     res.status(200).json({data:updatedData})
 }
-module.exports={userLogin,userRegister,getCurrentUser,updateUserData,ignore};
+const follow=async(req,res)=>{
+    const {to_follow_id}=req.body;
+    // const adminEmail=req.email;
+    try{
+        const adminData=await Users.findOne({email:req.email});
+        // console.log(following_id);
+        // console.log(adminData._id);
+        // console.log(adminData)
+        const response =await Followers.create({follower_id:adminData._id,following_id:to_follow_id})
+        // console.log(response);
+        res.status(200).json(response);
+    }
+    catch(err){
+        console.log("Failed to Follow ",err);
+        res.status(420).json(err);
+    }
+}
+const unFollow=async(req,res)=>{
+    const {following_id}=req.body;
+    
+    try{
+        const adminData=await Users.findOne({email:req.email}).select('_id');
+        console.log(adminData);
+        // console.log(following_id);
+        // console.log(adminData._id);
+        // console.log(adminData)
+        const response =await Followers.findOneAndDelete({follower_id:adminData._id,following_id:following_id})
+        // console.log(response);
+        res.status(200).json(response);
+    }
+    catch(err){
+        console.log("Failed to UnFollow ",err);
+        res.status(400).json(err);
+    }
+}
+const followers=async(req,res)=>{
+    try{
+        // console.log(req.userId);
+        // console.log(req.email);
+        const data=await Users.findOne({email:req.email});
+        // console.log(data._id);
+        const followers_data=await Followers.find({followering_id:data._id});
+        return res.status(200).send(followers_data);
+    }
+    catch(error){
+        console.log("Failed to Follow ",err)
+        res.status(420).json(err);
+    }
+    
+}
+const following=async(req,res)=>{
+    try{
+        const admin=await Users.findOne({email:req.email}).select('_id');
+        const following=await Followers.find({follower_id:admin._id}).select("following_id -_id");
+        res.status(200).json(following);
+    }
+    catch(err){
+        console.log("Failed to fetch who are following",err);
+        res.status(421).json(err);
+    }
+}
+module.exports={userLogin,userRegister,getCurrentUser,updateUserData,ignore,follow,unFollow,followers,following};

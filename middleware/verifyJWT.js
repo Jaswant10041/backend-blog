@@ -16,7 +16,7 @@ const verifyJWT=(req,res,next)=>{
                 console.log(err);
                 return res.status(401).json({message:`${err}`});
             }
-            // console.log(decoded);
+            console.log(decoded);
             req.userId=decoded.user._id;
             req.email=decoded.user.email;
             req.password=decoded.user.password;

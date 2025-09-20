@@ -2,6 +2,7 @@ const Articles = require("../models/articleModel");
 const Users = require("../models/userModel");
 const Comment = require("../models/commentModel");
 const mongoose = require("mongoose");
+
 const addComment = async (req, res) => {
   const { slug } = req.params;
   const article = await Articles.findOne({ slug });
@@ -85,4 +86,5 @@ const getComments=async(req,res)=>{
     res.status(401).json({msg:err});
   } 
 }
+
 module.exports = { addComment, deleteComment,getComments };

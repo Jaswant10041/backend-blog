@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Users = require("../models/userModel");
 const slugify = require("slugify");
 const uniqueValidator = require("mongoose-unique-validator");
-const Schema = new mongoose.Schema(
+const schema = new mongoose.Schema(
   {
     slug: {
       type: String,
@@ -14,31 +14,23 @@ const Schema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    description: {
-      type: String,
-      default: "Not mentioned anything",
-    },
     body: {
       type: String,
       default: "Not mentioned anything",
     },
-    tags: {
-      type: [String],
-    },
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Users",
+      ref: "users",
     },
-    favouritesCount: {
-      type: Number,
-      default: 0,
-    },
+    likes: [
+      {type:mongoose.Schema.Types.ObjectId,ref:"users"}
+  ],
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
   },
   { timestamps: true }
 );
-Schema.plugin(uniqueValidator);
-Schema.pre("save", function (next) {
+schema.plugin(uniqueValidator);
+schema.pre("save", function (next) {
   if (!this.slug) {
     this.slug = slugify(this.title, {
       lower: true,
@@ -48,19 +40,18 @@ Schema.pre("save", function (next) {
   }
   next();
 });
-Schema.methods.toArticleResponse = async function (author) {
+schema.methods.toArticleResponse = async function (author) {
   console.log(author);
   // const authorObj=await Users.findById(id);
   return {
     slug: this.slug,
     title: this.title,
-    description: this.description,
     body: this.body,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
-    favourites: this.favouritesCount,
+    likes: this.likes,
     author: author.toProfileJSON(),
   };
 };
-const model = mongoose.model("articles", Schema);
+const model = mongoose.model("articles", schema);
 module.exports = model;

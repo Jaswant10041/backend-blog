@@ -14,31 +14,47 @@ const schema=new mongoose.Schema({
     password:{
         type:String,
         required:true
+    },
+    image:{
+        type:String,
+        default:""
+    },
+    bio:{
+        type:String,
+        default:""
+    },
+    followers:{
+        type:Number,
+        default:0
+    },
+    following:{
+        type:Number,
+        default:0
     }
 });
 schema.methods.generateAccessToken=function(){
     const accessToken=jwt.sign(
         {
             user:{
-                name:this.name || "",
+                name:this.name,
                 email:this.email,
-                password:this.password
             } 
         },
         process.env.ACCESS_TOKEN,
-        {expiresIn:'1d'}
+        {expiresIn:'3h'}
     )
     return accessToken;
 }
+
 schema.methods.toUserResponse=function(){
     return {
-        user:{
-            name:this.name,
-            email:this.email,
-            accessToken: this.generateAccessToken()
-        }
+        name:this.name,
+        accessToken:this.generateAccessToken(),
+        email:this.email,
+        _id:this._id
     }
 }
+
 schema.methods.toProfileJSON=function(){
     return {
         username:this.name,

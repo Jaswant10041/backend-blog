@@ -1,22 +1,20 @@
 const { response } = require("express");
 const Articles = require("../models/articleModel");
 const Users = require("../models/userModel");
+
 const addArticle = async (req, res) => {
   try{
     const email = req.email;
     const author = await Users.findOne({ email });
   
     const id = author._id;
-    const { title, description, body, tags } = req.body.data;
-    if (!title || !description || !body) {
+    const { title, body } = req.body.data;
+    if (!title || !body) {
       return res.status(400).json({ message: "All fields are required" });
     }
     console.log('checkpost 1');
-    const article = await Articles.create({ title, description, body });
+    const article = await Articles.create({ title, body });
     article.author = id;
-    if (Array.isArray(tags) && tags.length > 0) {
-      article.tags = tags;
-    }
     console.log('checkpost 2');
     await article.save();
     const articleData = await article.toArticleResponse(author);
@@ -29,10 +27,34 @@ const addArticle = async (req, res) => {
     return res.status(402).json({msg:err});
   }
 };
+const searchPosts=async(req,res)=>{
+  try{
+    const {keyword}=req.params;
+    console.log(keyword);
+    const words = keyword.split(" "); // ["Acid", "properties"]
+
+    const regexArray = words.map(word => ({
+      title: { $regex: `.*${word}.*`, $options: "i" }
+    }));
+    console.log(regexArray);
+    const posts = await Articles.find({
+      $or: regexArray
+    }).populate("author", "name image");
+    
+    res.status(200).json({
+      count:posts.length,
+      posts
+    });
+  }
+  catch(error){
+    console.error(error);
+    res.status(404).json(error);
+  }
+}
 const getPosts=async(req,res)=>{
   try{
-    const response=await Articles.find();
-    
+    const response=await Articles.find().populate("author","name image");
+    // console.log(response);
     res.status(200).json(response);
   }
   catch(err){
@@ -51,4 +73,5 @@ const deletePost=async(req,res)=>{
     return res.status(400).json({msg:err});
   }
 }
-module.exports = { addArticle,getPosts,deletePost };
+
+module.exports = { addArticle,getPosts,deletePost,searchPosts };
