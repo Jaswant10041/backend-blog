@@ -23,6 +23,14 @@ const userLogin=async(req,res)=>{
         }
         console.log(foundData);
         const dataWithToken=foundData.toUserResponse();
+        // console.log(dataWithToken)
+        res.cookie('authToken',dataWithToken.accessToken,{
+            httpOnly:true,
+            secure:false,
+            sameSite:"none",
+            maxAge: 24*60*60*1000
+        });
+        // res.cookie('authToken',)
         // flag=true;
         res.status(201).json(dataWithToken);
     }

@@ -4,9 +4,12 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const corsOptions = require("./models/corsOptions");
+const cookieParser=require('cookie-parser');
+
 const PORT = process.env.PORT || 4000;
 app.use(express.json());
 app.use(cors(corsOptions));
+app.use(cookieParser());
 const DbConnect = require("./config/dbConnect");
 
 DbConnect();
