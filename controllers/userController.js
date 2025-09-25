@@ -22,12 +22,12 @@ const userLogin=async(req,res)=>{
             return ;
         }
         console.log(foundData);
-        const dataWithToken=foundData.toUserResponse();
+        const dataWithToken=await foundData.toUserResponse();
         // console.log(dataWithToken)
         res.cookie('authToken',dataWithToken.accessToken,{
-            httpOnly:true,
+            httpOnly:false,
             secure:false,
-            sameSite:"none",
+            sameSite:"lax",
             maxAge: 24*60*60*1000
         });
         // res.cookie('authToken',)
