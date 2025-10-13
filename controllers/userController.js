@@ -72,12 +72,18 @@ const userRegister=async(req,res)=>{
     }
 }   
 const getCurrentUser=async(req,res)=>{
-    const email=req.email;
-    const user=await Users.findOne({email});
-    if(!user){
-        return res.status(404).json({message:"User Not Found"});
+    const _id=req.params.id;
+    try{
+        const user=await Users.findById({_id});
+        if(!user){
+            return res.status(404).json({message:"User Not Found"});
+        }
+        res.status(200).json(user.toUserResponse());
     }
-    res.status(200).json(user.toUserResponse());
+    catch(err){
+        console.error(err);
+        res.status(400).json("Not found");
+    }
 }
 const ignore=(req,res)=>{
     return res.status(200).json({message:"Authentication successful"});
@@ -110,10 +116,19 @@ const follow=async(req,res)=>{
     try{
         const adminData=await Users.findOne({email:req.email});
         // console.log(following_id);
+        // if (adminData._id.toString() === to_follow_id) {
+        //     return res.status(400).json({ error: "Cannot follow yourself" });
+        // }
         // console.log(adminData._id);
         // console.log(adminData)
         const response =await Followers.create({follower_id:adminData._id,following_id:to_follow_id})
         // console.log(response);
+        await Users.findByIdAndUpdate(adminData._id, {
+            $inc: { following: 1 }
+        });
+        await Users.findByIdAndUpdate(to_follow_id, {
+            $inc: { followers: 1 }
+        });
         res.status(200).json(response);
     }
     catch(err){
@@ -132,6 +147,12 @@ const unFollow=async(req,res)=>{
         // console.log(adminData)
         const response =await Followers.findOneAndDelete({follower_id:adminData._id,following_id:following_id})
         // console.log(response);
+        await Users.findByIdAndUpdate(adminData._id, {
+            $inc: { following: -1 }
+        });
+        await Users.findByIdAndUpdate(following_id, {
+            $inc: { followers: -1 }
+        });
         res.status(200).json(response);
     }
     catch(err){

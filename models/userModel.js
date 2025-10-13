@@ -51,6 +51,8 @@ schema.methods.toUserResponse=function(){
         name:this.name,
         accessToken:this.generateAccessToken(),
         email:this.email,
+        followers:this.followers,
+        following:this.following,
         _id:this._id
     }
 }

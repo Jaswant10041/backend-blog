@@ -5,6 +5,8 @@ const app = express();
 const cors = require("cors");
 const corsOptions = require("./models/corsOptions");
 const cookieParser=require('cookie-parser');
+const jwt=require('jsonwebtoken');
+const Users=require('./models/userModel');
 
 const Message=require('./models/MessageModel');
 // const {Server}=require('socket.io')
@@ -36,14 +38,18 @@ const io=new Server(server,{
 const users=new Map();
 io.on("connection",(socket)=>{
   console.log("User connected: ",socket.id);
-  socket.on("join",(token)=>{
+  socket.on("join",async(token)=>{
     try{
-      const user=jwt.verify(token,process.env.JWT_SECRET);
-      users.set(user.id,socket.id);
-      console.log(`${user.id} joined with socket ${socket.id}`);
+      console.log(token);
+      const user=jwt.verify(token,process.env.ACCESS_TOKEN);
+      console.log(user);
+      const userData=await Users.findOne({email:user?.user?.email}).select('_id');
+      console.log(userData);
+      users.set(userData._id,socket.id);
+      console.log(`${userData._id} joined with socket ${socket.id}`);
     }
     catch(err){
-      console.log("Invalid token");
+      console.log("Invalid token",err);
     }
   });
   socket.on("sendMessage",async({senderId,receiverId,text})=>{

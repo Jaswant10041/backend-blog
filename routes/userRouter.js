@@ -4,7 +4,8 @@ const verifyJWT = require('../middleware/verifyJWT');
 //users logic
 userRouter.post('/users/register',userController.userRegister);
 userRouter.post('/users/login',userController.userLogin);
-userRouter.get('/users/user',verifyJWT, userController.getCurrentUser);
+userRouter.get('/user/:id', userController.getCurrentUser);
+userRouter.get('/users/user',verifyJWT, userController.ignore);
 userRouter.put('/users/update',userController.updateUserData);
 userRouter.get('/users/isauthenticated',verifyJWT,userController.ignore);
 //followers logic
