@@ -4,16 +4,45 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const corsOptions = require("./models/corsOptions");
+const {Server}=require('socket.io');
 const cookieParser=require('cookie-parser');
-const jwt=require('jsonwebtoken');
+// const jwt=require('jsonwebtoken');
 const Users=require('./models/userModel');
 
-const Message=require('./models/MessageModel');
-// const {Server}=require('socket.io')
-const {Server} =require('socket.io');
+// const Message=require('./models/MessageModel');
+
 const http=require('http');
 const server=http.createServer(app);
-// const io=new Server(s)
+const io=new Server(server,{
+  cors:{
+    origin:"http://localhost:5173",
+    credentials:true
+  }
+});//this is circuit
+const users={};
+
+io.on("connection",(socket)=>{
+  console.log("User Connected with socket_id "+socket.id);
+  socket.on("register",async(userId)=>{
+    const user=await Users.findById({_id:userId}).select("name -_id");
+    console.log(user);
+    users[userId]={socket_id:socket.id,name:user.name};
+    console.log("Registered user successfully with userId "+userId);
+  })
+  
+  socket.on('sendMessage',({msg,to_id,from_id})=>{
+    console.log("we need to send this msg "+msg+" to "+to_id);
+    const sender=users[from_id];
+    const reciever=users[to_id];
+    // console.log(socket_id);
+    // console.log(name);
+    if(!reciever?.socket_id){
+      console.log("Receiver id is not found sorry");
+    }
+    socket.to(reciever?.socket_id).emit("receiveMessage",{msg,from_name:sender?.name,to_id:to_id,from_id:from_id});
+    console.log("Message sent to "+reciever?.name);
+  })
+})
 
 const PORT = process.env.PORT || 4000;
 app.use(express.json());
@@ -28,57 +57,6 @@ app.use("/api/articles", require("./routes/articleRouter"));
 app.use("/api/articles/comments", require("./routes/commentRouter"));
 app.use('/api/messages',require('./routes/messageRouter'))
 
-//socket logic
-const io=new Server(server,{
-  cors:{
-    origin:["http://localhost:5173","https://bloggingverse.netlify.app"],
-    credentials:true
-  },
-});
-const users=new Map();
-io.on("connection",(socket)=>{
-  console.log("User connected: ",socket.id);
-  socket.on("join",async(token)=>{
-    try{
-      console.log(token);
-      const user=jwt.verify(token,process.env.ACCESS_TOKEN);
-      console.log(user);
-      const userData=await Users.findOne({email:user?.user?.email}).select('_id');
-      console.log(userData);
-      users.set(userData._id,socket.id);
-      console.log(`${userData._id} joined with socket ${socket.id}`);
-    }
-    catch(err){
-      console.log("Invalid token",err);
-    }
-  });
-  socket.on("sendMessage",async({senderId,receiverId,text})=>{
-    try{
-      const message=new Message({senderId,receiverId,text});
-      await message.save();
-      const receiverSocket=users.get(receiverId);
-      if(receiverSocket){
-        io.to(receiverSocket).emit("receiveMessage",{
-          senderId,
-          text,
-          createdAt:message.createdAt,
-        });
-      }
-      io.to(users.get(senderId)).emit("messageSaved",{
-        ...message._doc,
-      });
-    }
-    catch(err){
-      console.error("Error saving message: ",err);
-    }
-  })
-  socket.on("disconnect",()=>{
-    for(let [id,sId] of users.entries()){
-      if(sId===socket.id) users.delete(id);
-    }
-  })
-});
-
 
 mongoose.connection.once("open", async () => {
   console.log("Connected to MongoDB");
@@ -86,6 +64,7 @@ mongoose.connection.once("open", async () => {
     console.log(`app is listening on ${PORT}`);
   });
 });
+
 mongoose.connection.on("error", (err) => {
   console.log("Error while connecting to MongoDB: ", err);
 });

@@ -54,7 +54,7 @@ const getPosts = async (req, res) => {
   try {
     console.log(req.originalUrl);
     // console.log(req.query);
-    const limit = req.query.limit || 10;
+    const limit = req.query.limit || 5;
     const page = req.query.page || 1;
     const response = await Articles.find().populate("author", "name image").skip((page - 1) * limit).limit(limit);
     const totalPosts = await Articles.countDocuments();
