@@ -23,14 +23,14 @@ const users={};
 
 io.on("connection",(socket)=>{
   console.log("User Connected with socket_id "+socket.id);
-  socket.on("register",async(userId)=>{
-    const user=await Users.findById({_id:userId}).select("name -_id");
-    console.log(user);
-    users[userId]={socket_id:socket.id,name:user.name};
+  socket.on("register",(userId)=>{
+    // const user=await Users.findById({_id:userId}).select("name -_id");
+    // console.log(user);
+    users[userId]={socket_id:socket.id};
     console.log("Registered user successfully with userId "+userId);
   })
   
-  socket.on('sendMessage',({msg,to_id,from_id})=>{
+  socket.on('sendMessage',({msg,to_id,from_id,from_name,createdAt})=>{
     console.log("we need to send this msg "+msg+" to "+to_id);
     const sender=users[from_id];
     const reciever=users[to_id];
@@ -39,8 +39,8 @@ io.on("connection",(socket)=>{
     if(!reciever?.socket_id){
       console.log("Receiver id is not found sorry");
     }
-    socket.to(reciever?.socket_id).emit("receiveMessage",{msg,from_name:sender?.name,to_id:to_id,from_id:from_id});
-    console.log("Message sent to "+reciever?.name);
+    socket.to(reciever?.socket_id).emit("receiveMessage",{msg,from_name,to_id:to_id,from_id:from_id,createdAt});
+    // console.log("Message sent to "+reciever?.name);
   })
 })
 
