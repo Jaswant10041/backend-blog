@@ -1,4 +1,4 @@
-const allowedOrigins=['http://localhost:5173','https://bloggingverse.netlify.app'];
+const allowedOrigins=['http://localhost:5173','https://bloggingverse.netlify.app','http://3.226.245.59'];
 
 const corsOptions={
     origin: function(origin,callback){
