@@ -30,47 +30,104 @@ const addArticle = async (req, res) => {
 const searchPosts = async (req, res) => {
   try {
     const { keyword } = req.params;
-    console.log(keyword);
-    const words = keyword.split(" "); // ["Acid", "properties"]
-    const regexArray = words.map(word => ({
-      title: { $regex: `.*${word}.*`, $options: "i" }
-    }));
-    console.log(regexArray);
-    const posts = await Articles.find({
-      $or: regexArray
-    }).populate("author", "name image");
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50); // max 50 to prevent abuse
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    console.log(`Search: "${keyword}" | page: ${page}, limit: ${limit}`);
+
+    // Use MongoDB text search (fast, indexed) instead of regex
+    // Text search automatically handles word boundaries and is much faster
+    const posts = await Articles.find(
+      { $text: { $search: keyword } },
+      { score: { $meta: "textScore" } } // Include relevance score for sorting
+    )
+      .populate("author", "name image") // Only fetch needed fields
+      .select("title body createdAt author likes comments slug") // Exclude unnecessary fields
+      .sort({ score: { $meta: "textScore" } }) // Sort by relevance
+      .skip(skip)
+      .limit(limit)
+      .lean(); // Use lean() for read-only queries (20-30% faster)
+
+    const totalCount = await Articles.countDocuments({ $text: { $search: keyword } });
 
     res.status(200).json({
       count: posts.length,
+      total: totalCount,
+      page,
+      limit,
+      pages: Math.ceil(totalCount / limit),
+      hasMore: page * limit < totalCount,
       posts
     });
+  } catch (error) {
+    console.error("Search error:", error);
+    // If text search fails (index might not be built yet), fallback to regex
+    try {
+      const { keyword } = req.params;
+      const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const skip = (page - 1) * limit;
+
+      const words = keyword.split(" ");
+      const regexArray = words.map(word => ({
+        title: { $regex: `.*${word}.*`, $options: "i" }
+      }));
+
+      const posts = await Articles.find({ $or: regexArray })
+        .populate("author", "name image")
+        .select("title body createdAt author likes comments slug")
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const totalCount = await Articles.countDocuments({ $or: regexArray });
+
+      res.status(200).json({
+        count: posts.length,
+        total: totalCount,
+        page,
+        limit,
+        pages: Math.ceil(totalCount / limit),
+        hasMore: page * limit < totalCount,
+        posts
+      });
+    } catch (fallbackError) {
+      console.error("Fallback search error:", fallbackError);
+      res.status(404).json({ error: "Search failed" });
+    }
   }
-  catch (error) {
-    console.error(error);
-    res.status(404).json(error);
-  }
-}
+};
 const getPosts = async (req, res) => {
   try {
     console.log(req.originalUrl);
-    // console.log(req.query);
-    const limit = req.query.limit || 5;
-    const page = req.query.page || 1;
-    const response = await Articles.find().populate("author", "name image").skip((page - 1) * limit).limit(limit);
+    const limit = Math.min(parseInt(req.query.limit) || 5, 50); // max 50 to prevent abuse
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    // Use lean() for 20-30% faster read-only queries
+    const posts = await Articles.find()
+      .populate("author", "name image")
+      .select("title body createdAt author likes comments slug") // Only fetch needed fields
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .lean();
+
     const totalPosts = await Articles.countDocuments();
-    // console.log(response);
-    
-    res.status(200).json({ 
-      posts: response, 
-      totalPages:(Math.ceil(totalPosts/limit)),
-      hasMore: page * limit < totalPosts
+
+    res.status(200).json({
+      posts,
+      totalPages: Math.ceil(totalPosts / limit),
+      hasMore: page * limit < totalPosts,
+      page,
+      limit
     });
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err);
     return res.status(400).json({ msg: err });
   }
-}
+};
 const deletePost = async (req, res) => {
   try {
     const { _id } = req.body.data

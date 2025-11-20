@@ -30,6 +30,10 @@ const schema = new mongoose.Schema(
   { timestamps: true }
 );
 schema.plugin(uniqueValidator);
+
+// Add text index for efficient full-text search (much faster than regex)
+schema.index({ title: "text", body: "text" });
+
 schema.pre("save", function (next) {
   if (!this.slug) {
     this.slug = slugify(this.title, {
