@@ -7,7 +7,7 @@ A robust Node.js and Express backend for the ConceptHub platform.
 ### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/Jaswant10041/backend-blog.git
-cd backend-blog
+
 ```
 
 ### Step 2: Install Dependencies
